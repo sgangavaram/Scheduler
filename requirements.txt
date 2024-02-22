@@ -1,0 +1,10 @@
+# Function dependencies, for example:
+# package>=version
+flask
+firebase-admin
+python-dateutil
+pytz
+geopy
+functions-framework==3.*
+firebase-functions
+google-cloud-firestore
