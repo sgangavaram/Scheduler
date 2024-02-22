@@ -93,6 +93,8 @@ def get_jobs(run_date, status, tenant_id):
                     job.get("vehicleImageUrl"),
                     job.get("vehicleInternalImageUrl"),
                     job.get("parkingLocation"),
+                    job.get("isFlagged"),
+                    job.get("rescheduleStreak"),
                 )
             )
         except Exception as e:
