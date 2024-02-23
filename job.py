@@ -77,7 +77,7 @@ class Job:
         print("deadline:", self.deadline, "job_id:", self.id, "vid:", self.vehicleId, "duration:", self.estimatedDuration)
 
     def println(self):
-        print(str(self.vehicleId) + "-" + self.tenantBlockId + "-" + str(self.basement) + "\t" + str(self.id) + "\t" + str(self.deadline) + "\t" + str(self.estimatedDuration) + "\t", end=" ")
+        print(str(self.vehicleId) + "-" + self.tenantBlockId + "-" + str(self.basement) + "\t" + str(self.id) + "\t" + str(self.deadline) + "\t" + str(self.estimatedDuration) + "\t")
 
 
 def sanitize_jobs(jobs, tenant_blocks):

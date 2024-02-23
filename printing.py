@@ -70,13 +70,19 @@ def calculate_and_print(jobList):
         print()
 
 def passive_print(jobList):
-    for i in jobList.keys():
-        print("Worker ", i,len(jobList[i]))
-        for job in jobList[i]:
-            job.println()
-            print_decimal_time(job.estimatedStartTime, ' ')
-            print_decimal_time(job.estimatedEndTime, ' ')
-            print()
-            # print("\t\t", job.index)
+    for key, value in jobList.items():
+        print(f"Worker: {key}")
+        print(f"Jobs_Assigned: {value}")
         print()
-        print()
+# def passive_print(jobList):
+#     for i in jobList.keys():
+#         print("Worker ", i,len(jobList[i]))
+#         for job in jobList[i]:
+#             print(job.id + "\t" + job.deadline +"\t" + job.estimatedDuration)
+#             # print(str(job.vehicleId) + "-" + job.tenantBlockId + "-" + str(job.basement) + "\t" + str(job.id) + "\t" + str(job.deadline) + "\t" + str(job.estimatedDuration) + "\t")
+#             # print_decimal_time(job.estimatedStartTime, ' ')
+#             # print_decimal_time(job.estimatedEndTime, ' ')
+#             print()
+#             # print("\t\t", job.index)
+#         print()
+#         print()

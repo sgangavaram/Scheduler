@@ -211,10 +211,10 @@ def main(payload):
         print("An Error Occurred : ", e, traceback.format_exc())
     finally:
         print("Ending Execution:", datetime.now())
-
+        
 
 # main({"tenant_id":'jains-carlton-creek', "run_date":"25-2-2024"})
-main({"tenant_id":'poulomi-aristos', "run_date":"25-2-2024"})
+main({"tenant_id":'rainbow-vistas-rock-garden', "run_date":"19-3-2024"})
 # main({"tenant_id": 'prestige-highfields', "run_date": "19-8-2023"})
 
 
