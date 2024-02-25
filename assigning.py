@@ -9,30 +9,14 @@ from geopy.distance import distance
 # Global Variables:-
 STARTING_TIME = 5
 INFINITY = 1000 * 1000 * 1000
-VELOCITY = 1.5  # meter per sec.
-TIME_REQUIRED_FOR_BASEMENT_CHANGE = 90  # meter per sec.
+VELOCITY = 1.5 
+TIME_REQUIRED_FOR_BASEMENT_CHANGE = 90
 MAX_CARS_PER_WORKER = 40
 BASEMENT_TRAVEL_TIME = 90 
 skipped_jobs = []
 tenant_data = None
 travel_time_map = {}
 
-# def getTimeRequired(t1, t2):
-#     # returns time required in seconds
-#     global tenant_data
-#     # print(tenant_data)
-#     # Distance = distance((location1['latitude'],location1['longitude']), (location2['latitude'],location2['longitude'])).m
-#     Distance = distance((tenant_data['tenantBlocks'][t1]['locationCoordinates']['latitude'], tenant_data['tenantBlocks'][t1]['locationCoordinates']['longitude']),(tenant_data['tenantBlocks'][t2]['locationCoordinates']['latitude'], tenant_data['tenantBlocks'][t2]['locationCoordinates']['longitude'])).m
-#     return Distance / VELOCITY
-
-
-# def timeRequired(jobA, jobB):
-#     # indA = tower_index[jobA.tower]
-#     # indB = tower_index[jobB.tower]
-#     # time = travellingTimes[indA][indB]
-#     time = getTimeRequired(jobA.tenantBlockId, jobB.tenantBlockId)
-#     time += TIME_REQUIRED_FOR_BASEMENT_CHANGE * abs(int(jobA.basement[1]) - int(jobB.basement[1]))
-#     return time / 3600
 
 def timeRequired(jobA, jobB):
     travel_time = travel_time_map.get((jobA.tenantBlockId, jobB.tenantBlockId), INFINITY)
@@ -61,71 +45,29 @@ def getTimeRequired(job, last_location):
     except KeyError as e:
         print(f"KeyError in getTimeRequired: {e}")
         return 0
-    
-# def calculateTravelTime(tenant_data):
-#     for block_id1 in tenant_data:
-#         if isinstance(tenant_data[block_id1], dict):
-#             for block_id2 in tenant_data:
-#                 if block_id1 != block_id2:
-#                     coord1 = (tenant_data[block_id1]['locationCoordinates']['latitude'], tenant_data[block_id1]['locationCoordinates']['longitude'])
-#                     coord2 = (tenant_data[block_id2]['locationCoordinates']['latitude'], tenant_data[block_id2]['locationCoordinates']['longitude'])
-#                     distance_meters = distance(coord1, coord2).m
-#                     travel_time = distance_meters / VELOCITY
-#                     travel_time_map[(block_id1, block_id2)] = travel_time
-
-
-
-   
-# def assignJobs(tenant, jobs, workers):
-#     global tenant_data
-#     tenant_data = tenant
-#     calculateTravelTime(tenant_data)
-#     for i in jobs:
-#         X = i.deadline.split('-')[1]
-#         if len(X) == 4:
-#             X = X[:2]
-#         if len(X) == 3:
-#             X = X[:1]
-#         i.deadline = float(X)
-
-#     sorted_jobs = sorted(jobs, key=lambda x: (x.deadline, x.estimatedDuration, x.basement))
-#     for i in sorted_jobs:
-#         i.println()
-
-#     num_workers = len(workers)
-#     worker_assignments = {worker: {'jobs': [], 'capacity': MAX_CARS_PER_WORKER} for worker in workers}
-    
-#     for idx, job in enumerate(sorted_jobs):
-#         current_worker = workers[idx % num_workers]
-#         if worker_assignments[current_worker]['capacity'] > 0:
-#             worker_assignments[current_worker]['jobs'].append(job)
-#             worker_assignments[current_worker]['capacity'] -= 1
-#         else:
-#             print(f"No capacity left for worker {current_worker}.")
-
-#     return_dict = {worker_id: [job.id for job in worker_assignments[worker_id]['jobs']] for worker_id in worker_assignments}
-    
-#     return return_dict
-
 
 def calculateTravelTime(tenant_data):
     try:
-        print("Calculating travel time...")
-        travel_time_map = {}
-        for block_id1, block_data_list1 in tenant_data.items():
-            if isinstance(block_data_list1, list):
-                for block_data1 in block_data_list1:
-                    for block_id2, block_data_list2 in tenant_data.items():
-                        if block_id1 != block_id2 and isinstance(block_data_list2, list):
-                            for block_data2 in block_data_list2:
-                                coord1 = (block_data1['locationCoordinates']['latitude'], block_data1['locationCoordinates']['longitude'])
-                                coord2 = (block_data2['locationCoordinates']['latitude'], block_data2['locationCoordinates']['longitude'])
-                                distance_meters = distance(coord1, coord2).m
-                                travel_time = distance_meters / VELOCITY
-                                travel_time_map[(block_id1, block_id2)] = travel_time
+        if 'blocks' not in tenant_data:
+            raise ValueError("tenant_data must contain a 'blocks' key")
+        block_data = tenant_data['blocks']
+        if not isinstance(block_data, list):
+            raise ValueError("Block data must be a list of dictionaries")
+        travel_time_matrix = {}
+        for block in block_data:
+            if not isinstance(block, dict):
+                raise ValueError("Block data must be a list of dictionaries")
+            block_name = block['name']
+            travel_time_matrix[block_name] = {}
+            for other_block in block_data:
+                if block_name != other_block['name']:
+                    travel_time = timeRequired(block, other_block)
+                    travel_time_matrix[block_name][other_block['name']] = travel_time
+        return travel_time_matrix
     except Exception as e:
         print(f"Error in calculateTravelTime: {e}")
-    
+
+
 def assignJobs(tenant, jobs, workers):
     try:
         print("Assigning jobs...")
@@ -135,21 +77,30 @@ def assignJobs(tenant, jobs, workers):
             raise ValueError("tenant_data must be a dictionary")
         calculateTravelTime(tenant_data)
         sorted_jobs = sorted(jobs, key=lambda x: (x.deadline, x.estimatedDuration, x.basement))
-        # num_workers = len(workers)
-        worker_assignments = {worker: {'jobs': [], 'capacity': MAX_CARS_PER_WORKER} for worker in workers}
+        worker_assignments = {worker: {'jobs': [], 'capacity': MAX_CARS_PER_WORKER, 'total_time_worked': 0} for worker in workers}
         for job in sorted_jobs:
             min_travel_time = float('inf')
             best_worker = None
             for worker in workers:
                 travel_time_to_job = sum([timeRequired(job, assigned_job) for assigned_job in worker_assignments[worker]['jobs']])
-                if travel_time_to_job < min_travel_time and worker_assignments[worker]['capacity'] > 0:
-                    min_travel_time = travel_time_to_job
-                    best_worker = worker
+                if worker_assignments[worker]['capacity'] > 0 and worker_assignments[worker]['total_time_worked'] <= sum([worker_assignments[w]['total_time_worked'] for w in workers])/len(workers):
+                    prev_job = worker_assignments[worker]['jobs'][-1] if worker_assignments[worker]['jobs'] else None
+                    travel_time_to_next_basement = 0
+                    if prev_job:
+                        travel_time_to_next_basement = timeRequired(prev_job, job)
+                    total_travel_time = travel_time_to_job + travel_time_to_next_basement
+                    if total_travel_time < min_travel_time:
+                        min_travel_time = total_travel_time
+                        best_worker = worker
             if best_worker:
                 worker_assignments[best_worker]['jobs'].append(job)
                 worker_assignments[best_worker]['capacity'] -= 1
+                worker_assignments[best_worker]['total_time_worked'] += job.estimatedDuration + travel_time_to_next_basement
             else:
                 print(f"No available worker found for job {job.id}.")
-        return {worker_id: [job.id for job in worker_assignments[worker_id]['jobs']] for worker_id in worker_assignments}
+        result = {}
+        for worker_id, assignments in worker_assignments.items():
+            result[worker_id] = {'jobs': [{'id': job.id, 'deadline': job.deadline, 'estimatedDuration': job.estimatedDuration} for job in assignments['jobs']], 'total_time_worked': assignments['total_time_worked']}
+        return result
     except Exception as e:
         print(f"Error in assignJobs: {e}")
